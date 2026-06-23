@@ -1,4 +1,4 @@
-# Version: v1.4
+# Version: v1.5
 # Developer: BlueFalcon
 # App: BlueFalcon Shutdown Timer
 
@@ -6,17 +6,35 @@ import customtkinter as ctk
 import subprocess
 import math
 import webbrowser
+import sys
+import os
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class ShutdownTimerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         # Window configuration
-        self.title("BlueFalcon Shutdown Timer v1.4")
+        self.title("BlueFalcon Shutdown Timer v1.5")
         self.geometry("450x280")
         self.resizable(False, False)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
+
+        # Apply custom window and taskbar icon
+        try:
+            self.iconbitmap(resource_path("icon.ico"))
+        except Exception:
+            pass # Failsafe just in case the icon file is missing
 
         # State Variables
         self.timer_running = False
@@ -25,7 +43,7 @@ class ShutdownTimerApp(ctk.CTk):
         
         # Settings Variables
         self.input_unit = ctk.StringVar(value="Minutes")
-        self.show_days = ctk.BooleanVar(value=False) # Changed to False by default
+        self.show_days = ctk.BooleanVar(value=False)
         self.show_seconds = ctk.BooleanVar(value=True)
 
         # Settings/Info Button (Top Right)
@@ -275,7 +293,7 @@ class ShutdownTimerApp(ctk.CTk):
         title_label = ctk.CTkLabel(tabview.tab("About"), text="BlueFalcon Shutdown Timer", font=("Arial", 16, "bold"))
         title_label.pack(pady=(20, 5))
 
-        version_label = ctk.CTkLabel(tabview.tab("About"), text="Version 1.4", font=("Arial", 12), text_color="gray")
+        version_label = ctk.CTkLabel(tabview.tab("About"), text="Version 1.5", font=("Arial", 12), text_color="gray")
         version_label.pack(pady=(0, 10))
 
         dev_label = ctk.CTkLabel(tabview.tab("About"), text="Developed by: BlueFalcon", font=("Arial", 13))
