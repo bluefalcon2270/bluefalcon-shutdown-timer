@@ -1,9 +1,9 @@
-# Version: v1.2
+# Version: v1.3
 # Developer: BlueFalcon
 # App: BlueFalcon Shutdown Timer
 
 import customtkinter as ctk
-import os
+import subprocess
 import math
 import webbrowser
 
@@ -12,7 +12,7 @@ class ShutdownTimerApp(ctk.CTk):
         super().__init__()
 
         # Window configuration
-        self.title("BlueFalcon Shutdown Timer v1.2")
+        self.title("BlueFalcon Shutdown Timer v1.3")
         self.geometry("450x280")
         self.resizable(False, False)
         ctk.set_appearance_mode("dark")
@@ -145,14 +145,13 @@ class ShutdownTimerApp(ctk.CTk):
 
             action = self.action_var.get()
             
-            # Execute Windows OS commands immediately for standard actions
+            # Execute Windows OS commands IMMEDIATELY in the background (Non-Blocking)
             if action == "Shutdown":
-                os.system(f"shutdown /s /t {seconds}")
+                subprocess.Popen(f"shutdown /s /t {seconds}", shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
             elif action == "Restart":
-                os.system(f"shutdown /r /t {seconds}")
+                subprocess.Popen(f"shutdown /r /t {seconds}", shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
             
-            # NOTE: Hibernate and Sleep are NOT executed here anymore. 
-            # They are executed when the timer hits zero to prevent freezing the GUI.
+            # NOTE: Hibernate and Sleep are executed when the timer hits zero.
 
             # Update GUI state for Running
             self.time_left = seconds
@@ -178,15 +177,16 @@ class ShutdownTimerApp(ctk.CTk):
             self.time_var.set("Error")
 
     def execute_delayed_action(self):
+        # Execute delayed commands in the background (Non-Blocking)
         action = self.action_var.get()
         if action == "Hibernate":
-            os.system("shutdown /h")
+            subprocess.Popen("shutdown /h", shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
         elif action == "Sleep":
-            os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+            subprocess.Popen("rundll32.exe powrprof.dll,SetSuspendState 0,1,0", shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
     def cancel_timer(self):
-        # Abort system shutdown/restart
-        os.system("shutdown /a")
+        # Abort system shutdown/restart in the background (Non-Blocking)
+        subprocess.Popen("shutdown /a", shell=True, creationflags=subprocess.CREATE_NO_WINDOW)
         
         # Reset GUI state for Idle
         self.timer_running = False
@@ -255,12 +255,11 @@ class ShutdownTimerApp(ctk.CTk):
         )
         secs_switch.grid(row=2, column=0, columnspan=2, padx=20, pady=5, sticky="w")
 
-
         # --- ABOUT TAB ---
         title_label = ctk.CTkLabel(tabview.tab("About"), text="BlueFalcon Shutdown Timer", font=("Arial", 16, "bold"))
         title_label.pack(pady=(20, 5))
 
-        version_label = ctk.CTkLabel(tabview.tab("About"), text="Version 1.2", font=("Arial", 12), text_color="gray")
+        version_label = ctk.CTkLabel(tabview.tab("About"), text="Version 1.3", font=("Arial", 12), text_color="gray")
         version_label.pack(pady=(0, 10))
 
         dev_label = ctk.CTkLabel(tabview.tab("About"), text="Developed by: BlueFalcon", font=("Arial", 13))
