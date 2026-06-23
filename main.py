@@ -1,4 +1,4 @@
-# Version: v1.0
+# Version: v1.1
 # Developer: BlueFalcon
 # App: BlueFalcon Shutdown Timer
 
@@ -12,76 +12,98 @@ class ShutdownTimerApp(ctk.CTk):
         super().__init__()
 
         # Window configuration
-        self.title("BlueFalcon Shutdown Timer v1.0")
-        self.geometry("450x380")
+        self.title("BlueFalcon Shutdown Timer v1.1")
+        self.geometry("350x260")
         self.resizable(False, False)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
         self.timer_running = False
         self.time_left = 0
+        self.original_input = ""
 
-        # Timer Display Label
-        self.timer_label = ctk.CTkLabel(self, text="--:--", font=("Courier", 40, "bold"))
-        self.timer_label.pack(pady=(35, 25))
+        # Settings/Info Button (Top Right)
+        self.info_btn = ctk.CTkButton(
+            self, 
+            text="⚙️", 
+            width=30, 
+            height=30, 
+            fg_color="transparent", 
+            hover_color="gray25", 
+            font=("Arial", 16), 
+            command=self.open_about_window
+        )
+        self.info_btn.place(relx=0.96, rely=0.04, anchor="ne")
 
-        # Minutes Input Entry
-        self.minutes_entry = ctk.CTkEntry(self, placeholder_text="Minutes", width=200, justify="center")
-        self.minutes_entry.pack(pady=10)
+        # Unified Time Input / Display
+        self.time_var = ctk.StringVar()
+        self.time_entry = ctk.CTkEntry(
+            self, 
+            textvariable=self.time_var, 
+            font=("Courier", 45, "bold"), 
+            width=200, 
+            height=60, 
+            justify="center", 
+            placeholder_text="Min"
+        )
+        self.time_entry.pack(pady=(40, 15))
 
-        # Action Dropdown Combobox
+        # Action Dropdown
         self.action_var = ctk.StringVar(value="Shutdown")
         self.action_combo = ctk.CTkComboBox(
             self, 
             values=["Shutdown", "Restart", "Hibernate", "Sleep"], 
             variable=self.action_var, 
-            width=200
+            width=200, 
+            height=35, 
+            font=("Arial", 14)
         )
-        self.action_combo.pack(pady=10)
+        self.action_combo.pack(pady=(0, 20))
 
-        # Buttons Frame
-        self.button_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.button_frame.pack(pady=20)
-
-        # Start Button
-        self.start_btn = ctk.CTkButton(self.button_frame, text="Start Timer", width=120, command=self.start_timer)
-        self.start_btn.grid(row=0, column=0, padx=10)
-
-        # Cancel Button
-        self.cancel_btn = ctk.CTkButton(self.button_frame, text="Cancel Timer", width=120, command=self.cancel_timer)
-        self.cancel_btn.grid(row=0, column=1, padx=10)
-
-        # About / Info Button
-        self.info_btn = ctk.CTkButton(
+        # Unified Toggle Button (Start/Stop)
+        self.toggle_btn = ctk.CTkButton(
             self, 
-            text="ℹ️", 
-            width=32, 
-            height=32, 
-            corner_radius=16, 
-            fg_color="transparent", 
-            hover_color="gray25",
-            font=("Arial", 16),
-            command=self.open_about_window
+            text="▶ START", 
+            width=200, 
+            height=40, 
+            font=("Arial", 14, "bold"),
+            fg_color="#28a745", 
+            hover_color="#218838", 
+            command=self.toggle_timer
         )
-        self.info_btn.place(relx=0.95, rely=0.95, anchor="se")
+        self.toggle_btn.pack()
+
+    def toggle_timer(self):
+        if not self.timer_running:
+            self.start_timer()
+        else:
+            self.cancel_timer()
 
     def update_timer_display(self):
         if self.timer_running and self.time_left > 0:
             minutes = math.floor(self.time_left / 60)
             seconds = self.time_left % 60
-            self.timer_label.configure(text=f"{minutes:02d}:{seconds:02d}")
+            self.time_var.set(f"{minutes:02d}:{seconds:02d}")
             self.time_left -= 1
             self.after(1000, self.update_timer_display)
         elif self.time_left <= 0 and self.timer_running:
-            self.timer_label.configure(text="00:00")
+            self.time_var.set("00:00")
             self.timer_running = False
+            self.reset_ui_state()
 
     def start_timer(self):
         try:
-            minutes = int(self.minutes_entry.get())
+            input_val = self.time_var.get()
+            # If user typed something like "30:00", we just take the 30
+            if ":" in input_val:
+                minutes = int(input_val.split(":")[0])
+            else:
+                minutes = int(input_val)
+
             if minutes <= 0:
                 return
                 
+            self.original_input = str(minutes)
             seconds = minutes * 60
             action = self.action_var.get()
             
@@ -91,34 +113,45 @@ class ShutdownTimerApp(ctk.CTk):
             elif action == "Restart":
                 os.system(f"shutdown /r /t {seconds}")
             elif action == "Hibernate":
-                # Windows hibernate does not natively support a timeout parameter via cmd.
-                # A common workaround is scheduling it or just executing immediately.
                 os.system(f"timeout /t {seconds} /nobreak && shutdown /h")
             elif action == "Sleep":
                 os.system(f"timeout /t {seconds} /nobreak && rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
 
-            # Update GUI state
+            # Update GUI state for Running
             self.time_left = seconds
             self.timer_running = True
-            self.update_timer_display()
-            self.minutes_entry.configure(state="disabled")
+            
+            self.time_entry.configure(state="disabled", text_color="white")
             self.action_combo.configure(state="disabled")
-            self.start_btn.configure(state="disabled")
+            
+            self.toggle_btn.configure(
+                text="■ STOP", 
+                fg_color="#dc3545", 
+                hover_color="#c82333"
+            )
+            
+            self.update_timer_display()
 
         except ValueError:
-            self.timer_label.configure(text="Error")
+            self.time_var.set("Error")
 
     def cancel_timer(self):
         # Abort system shutdown/restart
         os.system("shutdown /a")
         
-        # Reset GUI state
+        # Reset GUI state for Idle
         self.timer_running = False
-        self.timer_label.configure(text="--:--")
-        self.minutes_entry.configure(state="normal")
+        self.reset_ui_state()
+        self.time_var.set(self.original_input)
+
+    def reset_ui_state(self):
+        self.time_entry.configure(state="normal")
         self.action_combo.configure(state="normal")
-        self.start_btn.configure(state="normal")
-        self.minutes_entry.delete(0, 'end')
+        self.toggle_btn.configure(
+            text="▶ START", 
+            fg_color="#28a745", 
+            hover_color="#218838"
+        )
 
     def open_about_window(self):
         # Create small Toplevel window
@@ -136,7 +169,7 @@ class ShutdownTimerApp(ctk.CTk):
         title_label.pack(pady=(20, 5))
 
         # Version
-        version_label = ctk.CTkLabel(about_win, text="Version 1.0", font=("Arial", 12), text_color="gray")
+        version_label = ctk.CTkLabel(about_win, text="Version 1.1", font=("Arial", 12), text_color="gray")
         version_label.pack(pady=(0, 10))
 
         # Developer Info

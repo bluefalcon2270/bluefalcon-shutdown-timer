@@ -12,38 +12,25 @@
 <br />
 </div>
 
-A lightweight, interactive Python desktop GUI application built to effortlessly schedule system power states. Whether you need to leave your PC downloading files overnight or limit screen time, this utility provides a beautiful dark-mode interface to safely manage system runtimes.
+A lightweight, interactive Windows desktop application built to effortlessly schedule system power states. Whether you need to leave your PC downloading files overnight or limit screen time, this utility provides a beautiful, unified dark-mode interface to safely manage system runtimes.
 <br><br>
 
-## ⚡ Quick Run
-To run this application on your local machine, clone the repository and execute the script:
+## ⚡ Quick Download & Run
+You do not need to install Python or any dependencies to use this application. 
 
-```bash
-git clone [https://github.com/bluefalcon2270/bluefalcon-shutdown-timer.git](https://github.com/bluefalcon2270/bluefalcon-shutdown-timer.git)
-cd bluefalcon-shutdown-timer
-pip install customtkinter
-python main.py
-```
+1. Go to the **[Releases](../../releases/latest)** tab on the right side of this repository.
+2. Download the latest `BlueFalcon_Shutdown_Timer.exe` file.
+3. Double-click to run it instantly.
 
 <br>
 
-## 🌟 Features
-This application replaces the need to remember complex `shutdown /s /t` command line arguments by providing a clean, graphical dashboard:
+## 🌟 How It Works
+This application completely replaces the need to remember complex command-line arguments. It operates through a unified, minimalist dashboard:
 
-### 1️⃣ Multi-Action Support
-Easily toggle between different system commands from the dropdown menu:
-* **Shutdown:** Completely power off the machine after the timer expires.
-* **Restart:** Reboot the system automatically.
-* **Hibernate:** Save your current session state to the hard drive and power down.
-* **Sleep:** Put the computer into a low-power standby mode.
-
-### 2️⃣ Dynamic Visual Timer
-* **Live Countdown:** The dashboard features a large, dynamic courier font that displays your remaining time in a clean `MM:SS` format.
-* **Safe Cancellation:** Instantly abort any active timer and revoke pending Windows commands with a single click of the "Cancel Timer" button.
-
-### 3️⃣ Modern UI/UX
-* **CustomTkinter Engine:** Built entirely on `customtkinter` for a polished, modern, and dark-themed interface that natively matches Windows 11 aesthetics.
-* **About Dashboard:** Includes an integrated information window containing application versioning and direct links back to the official repository.
+* **Unified Input & Display:** Type the number of minutes directly into the large central display. Once you click start, the input box seamlessly transforms into a live visual countdown timer.
+* **Dynamic Toggle Button:** A single, smart button controls the flow. It stays Green to start the timer, and immediately turns Red acting as a "Cancel" button while the timer is running.
+* **Multi-Action Support:** Easily select between `Shutdown`, `Restart`, `Hibernate`, or `Sleep` using the central dropdown menu.
+* **Safe Cancellation:** Clicking the Red Stop button instantly aborts any active timer and revokes pending Windows OS commands, restoring your interface to its idle state.
 
 <br><br>
 
