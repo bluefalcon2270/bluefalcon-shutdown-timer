@@ -1,4 +1,4 @@
-# Version: v1.3
+# Version: v1.4
 # Developer: BlueFalcon
 # App: BlueFalcon Shutdown Timer
 
@@ -12,7 +12,7 @@ class ShutdownTimerApp(ctk.CTk):
         super().__init__()
 
         # Window configuration
-        self.title("BlueFalcon Shutdown Timer v1.3")
+        self.title("BlueFalcon Shutdown Timer v1.4")
         self.geometry("450x280")
         self.resizable(False, False)
         ctk.set_appearance_mode("dark")
@@ -25,7 +25,7 @@ class ShutdownTimerApp(ctk.CTk):
         
         # Settings Variables
         self.input_unit = ctk.StringVar(value="Minutes")
-        self.show_days = ctk.BooleanVar(value=True)
+        self.show_days = ctk.BooleanVar(value=False) # Changed to False by default
         self.show_seconds = ctk.BooleanVar(value=True)
 
         # Settings/Info Button (Top Right)
@@ -41,6 +41,15 @@ class ShutdownTimerApp(ctk.CTk):
         )
         self.info_btn.place(relx=0.96, rely=0.04, anchor="ne")
 
+        # Dynamic Unit / Status Label
+        self.status_label = ctk.CTkLabel(
+            self, 
+            text="Current Unit: Minutes", 
+            font=("Arial", 12), 
+            text_color="gray"
+        )
+        self.status_label.pack(pady=(25, 0))
+
         # Unified Time Input / Display
         self.time_var = ctk.StringVar()
         self.time_entry = ctk.CTkEntry(
@@ -52,7 +61,7 @@ class ShutdownTimerApp(ctk.CTk):
             justify="center", 
             placeholder_text="Time (Minutes)"
         )
-        self.time_entry.pack(pady=(40, 15))
+        self.time_entry.pack(pady=(2, 15))
 
         # Action Dropdown
         self.action_var = ctk.StringVar(value="Shutdown")
@@ -79,10 +88,14 @@ class ShutdownTimerApp(ctk.CTk):
         )
         self.toggle_btn.pack()
 
-    def update_placeholder(self, *args):
-        # Update the placeholder text based on the selected unit
+    def update_unit_display(self, *args):
+        # Update the placeholder and status label based on the selected unit
         unit = self.input_unit.get()
         self.time_entry.configure(placeholder_text=f"Time ({unit})")
+        
+        # Only update the text if the timer is NOT currently running
+        if not self.timer_running:
+            self.status_label.configure(text=f"Current Unit: {unit}")
 
     def format_time(self, total_seconds):
         # Calculate time components
@@ -157,9 +170,8 @@ class ShutdownTimerApp(ctk.CTk):
             self.time_left = seconds
             self.timer_running = True
             
-            # Force immediate visual update so it doesn't wait 1 second to change
-            self.time_var.set(self.format_time(self.time_left))
-            
+            # Visual Updates
+            self.status_label.configure(text="Time Remaining", text_color="#1f6aa5")
             self.time_entry.configure(state="disabled", text_color="white")
             self.action_combo.configure(state="disabled")
             
@@ -168,6 +180,9 @@ class ShutdownTimerApp(ctk.CTk):
                 fg_color="#dc3545", 
                 hover_color="#c82333"
             )
+            
+            # Force immediate visual update so it doesn't wait 1 second to change
+            self.time_var.set(self.format_time(self.time_left))
             
             # Start the loop countdown
             self.time_left -= 1
@@ -194,6 +209,7 @@ class ShutdownTimerApp(ctk.CTk):
         self.time_var.set(self.original_input)
 
     def reset_ui_state(self):
+        self.status_label.configure(text=f"Current Unit: {self.input_unit.get()}", text_color="gray")
         self.time_entry.configure(state="normal")
         self.action_combo.configure(state="normal")
         self.toggle_btn.configure(
@@ -233,7 +249,7 @@ class ShutdownTimerApp(ctk.CTk):
             tabview.tab("Settings"),
             values=["Minutes", "Hours"],
             variable=self.input_unit,
-            command=self.update_placeholder
+            command=self.update_unit_display
         )
         unit_menu.grid(row=0, column=1, padx=10, pady=(20, 10))
 
@@ -259,7 +275,7 @@ class ShutdownTimerApp(ctk.CTk):
         title_label = ctk.CTkLabel(tabview.tab("About"), text="BlueFalcon Shutdown Timer", font=("Arial", 16, "bold"))
         title_label.pack(pady=(20, 5))
 
-        version_label = ctk.CTkLabel(tabview.tab("About"), text="Version 1.3", font=("Arial", 12), text_color="gray")
+        version_label = ctk.CTkLabel(tabview.tab("About"), text="Version 1.4", font=("Arial", 12), text_color="gray")
         version_label.pack(pady=(0, 10))
 
         dev_label = ctk.CTkLabel(tabview.tab("About"), text="Developed by: BlueFalcon", font=("Arial", 13))
