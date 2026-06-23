@@ -1,4 +1,4 @@
-# Version: v1.1
+# Version: v1.2
 # Developer: BlueFalcon
 # App: BlueFalcon Shutdown Timer
 
@@ -12,15 +12,21 @@ class ShutdownTimerApp(ctk.CTk):
         super().__init__()
 
         # Window configuration
-        self.title("BlueFalcon Shutdown Timer v1.1")
-        self.geometry("350x260")
+        self.title("BlueFalcon Shutdown Timer v1.2")
+        self.geometry("450x280")
         self.resizable(False, False)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
+        # State Variables
         self.timer_running = False
         self.time_left = 0
         self.original_input = ""
+        
+        # Settings Variables
+        self.input_unit = ctk.StringVar(value="Minutes")
+        self.show_days = ctk.BooleanVar(value=True)
+        self.show_seconds = ctk.BooleanVar(value=True)
 
         # Settings/Info Button (Top Right)
         self.info_btn = ctk.CTkButton(
@@ -31,7 +37,7 @@ class ShutdownTimerApp(ctk.CTk):
             fg_color="transparent", 
             hover_color="gray25", 
             font=("Arial", 16), 
-            command=self.open_about_window
+            command=self.open_settings_window
         )
         self.info_btn.place(relx=0.96, rely=0.04, anchor="ne")
 
@@ -40,11 +46,11 @@ class ShutdownTimerApp(ctk.CTk):
         self.time_entry = ctk.CTkEntry(
             self, 
             textvariable=self.time_var, 
-            font=("Courier", 45, "bold"), 
-            width=200, 
-            height=60, 
+            font=("Courier", 40, "bold"), 
+            width=320, 
+            height=65, 
             justify="center", 
-            placeholder_text="Min"
+            placeholder_text="Time (Minutes)"
         )
         self.time_entry.pack(pady=(40, 15))
 
@@ -73,6 +79,31 @@ class ShutdownTimerApp(ctk.CTk):
         )
         self.toggle_btn.pack()
 
+    def update_placeholder(self, *args):
+        # Update the placeholder text based on the selected unit
+        unit = self.input_unit.get()
+        self.time_entry.configure(placeholder_text=f"Time ({unit})")
+
+    def format_time(self, total_seconds):
+        # Calculate time components
+        d = total_seconds // 86400
+        h = (total_seconds % 86400) // 3600
+        m = (total_seconds % 3600) // 60
+        s = total_seconds % 60
+
+        # Build dynamic string based on settings
+        parts = []
+        if self.show_days.get():
+            parts.append(f"{d:02d}")
+        
+        parts.append(f"{h:02d}")
+        parts.append(f"{m:02d}")
+        
+        if self.show_seconds.get():
+            parts.append(f"{s:02d}")
+
+        return ":".join(parts)
+
     def toggle_timer(self):
         if not self.timer_running:
             self.start_timer()
@@ -81,45 +112,54 @@ class ShutdownTimerApp(ctk.CTk):
 
     def update_timer_display(self):
         if self.timer_running and self.time_left > 0:
-            minutes = math.floor(self.time_left / 60)
-            seconds = self.time_left % 60
-            self.time_var.set(f"{minutes:02d}:{seconds:02d}")
+            self.time_var.set(self.format_time(self.time_left))
             self.time_left -= 1
             self.after(1000, self.update_timer_display)
+            
         elif self.time_left <= 0 and self.timer_running:
-            self.time_var.set("00:00")
+            self.time_var.set(self.format_time(0))
             self.timer_running = False
+            self.execute_delayed_action()
             self.reset_ui_state()
 
     def start_timer(self):
         try:
             input_val = self.time_var.get()
-            # If user typed something like "30:00", we just take the 30
+            
+            # Basic validation to grab the raw number if they typed something complex
             if ":" in input_val:
-                minutes = int(input_val.split(":")[0])
+                base_time = int(input_val.split(":")[0])
             else:
-                minutes = int(input_val)
+                base_time = int(input_val)
 
-            if minutes <= 0:
+            if base_time <= 0:
                 return
                 
-            self.original_input = str(minutes)
-            seconds = minutes * 60
+            self.original_input = str(base_time)
+            
+            # Convert based on selected unit
+            if self.input_unit.get() == "Minutes":
+                seconds = base_time * 60
+            else:
+                seconds = base_time * 3600
+
             action = self.action_var.get()
             
-            # Execute Windows OS commands
+            # Execute Windows OS commands immediately for standard actions
             if action == "Shutdown":
                 os.system(f"shutdown /s /t {seconds}")
             elif action == "Restart":
                 os.system(f"shutdown /r /t {seconds}")
-            elif action == "Hibernate":
-                os.system(f"timeout /t {seconds} /nobreak && shutdown /h")
-            elif action == "Sleep":
-                os.system(f"timeout /t {seconds} /nobreak && rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+            
+            # NOTE: Hibernate and Sleep are NOT executed here anymore. 
+            # They are executed when the timer hits zero to prevent freezing the GUI.
 
             # Update GUI state for Running
             self.time_left = seconds
             self.timer_running = True
+            
+            # Force immediate visual update so it doesn't wait 1 second to change
+            self.time_var.set(self.format_time(self.time_left))
             
             self.time_entry.configure(state="disabled", text_color="white")
             self.action_combo.configure(state="disabled")
@@ -130,10 +170,19 @@ class ShutdownTimerApp(ctk.CTk):
                 hover_color="#c82333"
             )
             
-            self.update_timer_display()
+            # Start the loop countdown
+            self.time_left -= 1
+            self.after(1000, self.update_timer_display)
 
         except ValueError:
             self.time_var.set("Error")
+
+    def execute_delayed_action(self):
+        action = self.action_var.get()
+        if action == "Hibernate":
+            os.system("shutdown /h")
+        elif action == "Sleep":
+            os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
 
     def cancel_timer(self):
         # Abort system shutdown/restart
@@ -153,36 +202,76 @@ class ShutdownTimerApp(ctk.CTk):
             hover_color="#218838"
         )
 
-    def open_about_window(self):
-        # Create small Toplevel window
-        about_win = ctk.CTkToplevel(self)
-        about_win.title("About")
-        about_win.geometry("300x220")
-        about_win.resizable(False, False)
+    def open_settings_window(self):
+        # Prevent multiple windows from opening
+        if hasattr(self, "settings_win") and self.settings_win is not None and self.settings_win.winfo_exists():
+            self.settings_win.focus()
+            return
+
+        # Create Toplevel window
+        self.settings_win = ctk.CTkToplevel(self)
+        self.settings_win.title("Settings & Info")
+        self.settings_win.geometry("380x320")
+        self.settings_win.resizable(False, False)
         
         # Bring window to front
-        about_win.attributes("-topmost", True)
-        about_win.grab_set()
+        self.settings_win.attributes("-topmost", True)
+        self.settings_win.grab_set()
 
-        # Title
-        title_label = ctk.CTkLabel(about_win, text="BlueFalcon Shutdown Timer", font=("Arial", 16, "bold"))
+        # Create Tabview
+        tabview = ctk.CTkTabview(self.settings_win, width=340, height=280)
+        tabview.pack(pady=10, padx=10)
+        tabview.add("Settings")
+        tabview.add("About")
+
+        # --- SETTINGS TAB ---
+        # Input Unit Control
+        unit_label = ctk.CTkLabel(tabview.tab("Settings"), text="Time Input Unit:", font=("Arial", 13, "bold"))
+        unit_label.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="w")
+        
+        unit_menu = ctk.CTkOptionMenu(
+            tabview.tab("Settings"),
+            values=["Minutes", "Hours"],
+            variable=self.input_unit,
+            command=self.update_placeholder
+        )
+        unit_menu.grid(row=0, column=1, padx=10, pady=(20, 10))
+
+        # Days Display Control
+        days_switch = ctk.CTkSwitch(
+            tabview.tab("Settings"),
+            text="Display Days in Timer (DD:HH...)",
+            variable=self.show_days,
+            font=("Arial", 12)
+        )
+        days_switch.grid(row=1, column=0, columnspan=2, padx=20, pady=15, sticky="w")
+
+        # Seconds Display Control
+        secs_switch = ctk.CTkSwitch(
+            tabview.tab("Settings"),
+            text="Display Seconds in Timer (...MM:SS)",
+            variable=self.show_seconds,
+            font=("Arial", 12)
+        )
+        secs_switch.grid(row=2, column=0, columnspan=2, padx=20, pady=5, sticky="w")
+
+
+        # --- ABOUT TAB ---
+        title_label = ctk.CTkLabel(tabview.tab("About"), text="BlueFalcon Shutdown Timer", font=("Arial", 16, "bold"))
         title_label.pack(pady=(20, 5))
 
-        # Version
-        version_label = ctk.CTkLabel(about_win, text="Version 1.1", font=("Arial", 12), text_color="gray")
+        version_label = ctk.CTkLabel(tabview.tab("About"), text="Version 1.2", font=("Arial", 12), text_color="gray")
         version_label.pack(pady=(0, 10))
 
-        # Developer Info
-        dev_label = ctk.CTkLabel(about_win, text="Developed by: BlueFalcon", font=("Arial", 13))
+        dev_label = ctk.CTkLabel(tabview.tab("About"), text="Developed by: BlueFalcon", font=("Arial", 13))
         dev_label.pack(pady=(5, 2))
         
-        email_label = ctk.CTkLabel(about_win, text="Email: Bluefalcon2270@gmail.com", font=("Arial", 12))
+        email_label = ctk.CTkLabel(tabview.tab("About"), text="Email: Bluefalcon2270@gmail.com", font=("Arial", 12))
         email_label.pack(pady=(0, 15))
 
-        # GitHub Button
         github_url = "https://github.com/bluefalcon2270/bluefalcon-shutdown-timer"
         github_btn = ctk.CTkButton(
-            about_win, 
+            tabview.tab("About"), 
             text="GitHub Repository", 
             width=150, 
             command=lambda: webbrowser.open(github_url)
