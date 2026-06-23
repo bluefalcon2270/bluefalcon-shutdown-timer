@@ -15,6 +15,8 @@
 A lightweight, interactive Windows desktop application built to effortlessly schedule system power states. Whether you need to leave your PC downloading files overnight or limit screen time, this utility provides a beautiful, unified dark-mode interface to safely manage system runtimes.
 <br><br>
 
+![alt text](<Screenshot 2026-06-23 131711.png>)
+
 ## ⚡ Quick Download & Run
 You do not need to install Python or any dependencies to use this application. 
 
